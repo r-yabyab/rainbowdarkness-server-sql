@@ -1,4 +1,5 @@
 // const express = require('express');
+require('dotenv').config()
 const mongoose = require('mongoose')
 const { Pool } = require('pg');
 const pool = new Pool({
@@ -21,6 +22,10 @@ const db = mongoose.connection;
 db.on('error', (error) => {
     console.error('MongoDB ERROR------', error)
 })
+
+db.once('open', () => {
+    console.log('connected to mongodb');
+});
 
 // mongodb Schema
 
@@ -53,9 +58,11 @@ const Rainbow = mongoose.model('Rainbow', rainbowSchema)
 // get raw data from mongoDB
 // const rawData = mongoose.connect(process.env.MONG_URI).then(() => {
     
-    const getLast = async () => {
+    const getDataFromMongoDB = async () => {
         try{
             const data = await Rainbow.find().sort({ createdAt: -1 })
+            console.log('access data')
+            console.log(data + "DATA");
             return data;
         } catch (error) {
             console.error("error fetching from mongoDB", error)
@@ -78,27 +85,40 @@ const Rainbow = mongoose.model('Rainbow', rainbowSchema)
 
 }
 
+getDataFromMongoDB();
+
+// const main = async () => {
+//     try {
+//       const dataFromMongoDB = await getDataFromMongoDB();
+//       await insertDataIntoPostgreSQL(dataFromMongoDB);
+//       process.exit(0);
+//     } catch (error) {
+//       console.error('Error:', error);
+//       process.exit(1);
+//     }
+//   };
+
+//   main();
 
 
-
-// insert cleaned data into pg
-const intoPostgres = async (data) => {
-    try {
-        for (const entry of data) {
-            const query = 'INSERT INTO rainbows (mood) VALUES $1';
-            const values = [number];
+// // insert cleaned data into pg
+// const intoPostgres = async (data) => {
+//     try {
+//         for (const entry of data) {
+//             const query = 'INSERT INTO rainbows (mood) VALUES $1';
+//             const values = [number];
     
-            const { rows } = await pool.query(query, values);
+//             const { rows } = await pool.query(query, values);
     
-            if (rows.length === 0) {
-                return res.status(404).json({ error: "server error"});
-            }
-        }
+//             if (rows.length === 0) {
+//                 return res.status(404).json({ error: "server error"});
+//             }
+//         }
 
         
-        res.status(200).json(rows[0]);
-    } catch (error) {
-        console.error("some error", error);
-        res.status(500).json({ error: "Internal server error" });
-    }
-}
+//         res.status(200).json(rows[0]);
+//     } catch (error) {
+//         console.error("some error", error);
+//         res.status(500).json({ error: "Internal server error" });
+//     }
+// }
