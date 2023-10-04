@@ -10,6 +10,8 @@ const pool = new Pool({
     port: process.env.PORT,
 });
 
+// nginx points to postgres on /postgres/ on proxy_pass localhost:5432/;
+
 // const app = express();
 
 mongoose.connect(process.env.MONG_URI, {
