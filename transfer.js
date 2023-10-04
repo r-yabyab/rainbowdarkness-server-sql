@@ -56,69 +56,56 @@ const Rainbow = mongoose.model('Rainbow', rainbowSchema)
 
 
 // get raw data from mongoDB
-// const rawData = mongoose.connect(process.env.MONG_URI).then(() => {
     
     const getDataFromMongoDB = async () => {
         try{
-            const data = await Rainbow.find().sort({ createdAt: -1 })
+            const data = await Rainbow.find().sort({ createdAt: 1 })
             console.log('access data')
             console.log(data + "DATA");
+            console.log("length" + data.length)
             return data;
         } catch (error) {
             console.error("error fetching from mongoDB", error)
             throw error;
         }
-    //     const rainbowsLast = await Rainbow.aggregate([
-    //       // created at -1 descending (most recent), limit for # of items
-    //       {
-    //         '$sort': {
-    //           'createdAt': -1
-    //         }
-    //       }, 
-    //       // {
-    //       //   '$limit': 25
-    //       // }
-    //     ])
-    //     res.status(200).json(rainbowsLast)
-    //     console.log(rainbowsLast + "DATA")
-    //   }
-
 }
 
-getDataFromMongoDB();
-
-// const main = async () => {
-//     try {
-//       const dataFromMongoDB = await getDataFromMongoDB();
-//       await insertDataIntoPostgreSQL(dataFromMongoDB);
-//       process.exit(0);
-//     } catch (error) {
-//       console.error('Error:', error);
-//       process.exit(1);
-//     }
-//   };
-
-//   main();
-
-
 // // insert cleaned data into pg
-// const intoPostgres = async (data) => {
-//     try {
-//         for (const entry of data) {
-//             const query = 'INSERT INTO rainbows (mood) VALUES $1';
-//             const values = [number];
-    
-//             const { rows } = await pool.query(query, values);
-    
-//             if (rows.length === 0) {
-//                 return res.status(404).json({ error: "server error"});
-//             }
-//         }
+const insertDataIntoPostgreSQL = async (data) => {
+    try {
+        for (const entry of data) {
+            const { number, userID, timeSlept, activities, memo } = entry;
 
-        
-//         res.status(200).json(rows[0]);
-//     } catch (error) {
-//         console.error("some error", error);
-//         res.status(500).json({ error: "Internal server error" });
-//     }
-// }
+            const query = 'INSERT INTO rainbows (number, userID, timeSlept, activities, memo) VALUES ($1, $2, $3, $4, $5)';
+            const values = [number, userID, timeSlept, activities, memo];
+    
+            const { rows } = await pool.query(query, values);
+    
+            if (rows.length === 0) {
+                // return res.status(404).json({ error: "server error"});
+                console.error("failed to insert into postgres")
+            }
+        }
+        console.log("Data insertion successful!")
+    } catch (error) {
+        console.error("some error", error);
+        throw error;
+    }
+}
+
+const main = async () => {
+    try {
+      const dataFromMongoDB = await getDataFromMongoDB();
+      await insertDataIntoPostgreSQL(dataFromMongoDB);
+      process.exit(0);
+    } catch (error) {
+      console.error('Error:', error);
+      process.exit(1);
+    }
+  };
+
+  main();
+
+//   // just for showing the data from mongoDB
+//   getDataFromMongoDB();
+
