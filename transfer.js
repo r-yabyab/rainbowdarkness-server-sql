@@ -1,6 +1,7 @@
 // const express = require('express');
 require('dotenv').config()
 const mongoose = require('mongoose')
+const axios = require('axios');
 const { Pool } = require('pg');
 const pool = new Pool({
     user: process.env.PG_USER,
@@ -29,13 +30,13 @@ db.once('open', () => {
     console.log('connected to mongodb');
 });
 
+// pool.connect();
+
 // mongodb Schema
 
 const Schema = mongoose.Schema
 
 const rainbowSchema = new Schema ({
-    // if user submits decimal, MongoDB stores as a Double
-    // if whole number, Int32
     number: {
         type: Number,
         required: true
@@ -52,6 +53,12 @@ const rainbowSchema = new Schema ({
     memo: {
         type: String
     },
+    createdAt: {
+        type: String
+    },
+    updatedAt: {
+        type: String
+    }
 }, {timestamps: true})
 // const mongooseModel = mongoose.model("Rainbow", rainbowSchema)
 const Rainbow = mongoose.model('Rainbow', rainbowSchema)
@@ -76,10 +83,10 @@ const Rainbow = mongoose.model('Rainbow', rainbowSchema)
 const insertDataIntoPostgreSQL = async (data) => {
     try {
         for (const entry of data) {
-            const { number, userID, timeSlept, activities, memo } = entry;
+            const { number, userID, timeSlept, activities, memo, createdAt, updatedAt } = entry;
 
-            const query = 'INSERT INTO rainbows (number, userID, timeSlept, activities, memo) VALUES ($1, $2, $3, $4, $5)';
-            const values = [number, userID, timeSlept, activities, memo];
+            const query = 'INSERT INTO rainbows (number, userID, timeSlept, activities, memo, createdat, updatedat) VALUES ($1, $2, $3, $4, $5, $6, $7)';
+            const values = [number, userID, timeSlept, activities, memo, createdAt, updatedAt];
     
             const { rows } = await pool.query(query, values);
     
@@ -95,10 +102,22 @@ const insertDataIntoPostgreSQL = async (data) => {
     }
 }
 
+const sendDataToEndpoint = async (data) => {
+    try {
+        const response = await axios.post('https://stockshapes.net/postgres', data)
+        console.log('data sent to endpoint');
+    } catch (error) {
+        console.error("error1", error)
+        throw error;
+    }
+}
+
 const main = async () => {
     try {
       const dataFromMongoDB = await getDataFromMongoDB();
       await insertDataIntoPostgreSQL(dataFromMongoDB);
+
+      await sendDataToEndpoint(dataFromMongoDB);
       process.exit(0);
     } catch (error) {
       console.error('Error:', error);
